@@ -1,0 +1,37 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: Release
+
+steps:
+
+- task: UseDotNet@2
+  inputs:
+    packageType: sdk
+    version: 10.x
+
+- script: dotnet restore
+  displayName: Restore
+
+- script: dotnet build --configuration $(buildConfiguration)
+  displayName: Build
+
+- script: dotnet test --configuration $(buildConfiguration) --logger trx
+  displayName: Test
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: VSTest
+    testResultsFiles: '**/*.trx'
+
+- script: dotnet publish WebApp/WebApp.csproj -c $(buildConfiguration) -o $(Build.ArtifactStagingDirectory)
+  displayName: Publish
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: $(Build.ArtifactStagingDirectory)
+    artifactName: drop
